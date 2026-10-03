@@ -1,24 +1,32 @@
-// ==========================================
-// CRYSTAL 5D CONVERTER
-// Main Application Logic
-// ==========================================
-
 "use strict";
 
+/*
+====================================================
+CRYSTAL 5D CONVERTER
+STEP 5
+Image analysis + DMC color matching
+====================================================
+*/
 
-// ==========================================
-// DOM ELEMENTS
-// ==========================================
 
-const imageInput = document.getElementById("imageInput");
+// ==================================================
+// DOM
+// ==================================================
 
-const fileName = document.getElementById("fileName");
+const imageInput =
+    document.getElementById("imageInput");
 
-const widthInput = document.getElementById("widthInput");
+const fileName =
+    document.getElementById("fileName");
 
-const heightInput = document.getElementById("heightInput");
+const widthInput =
+    document.getElementById("widthInput");
 
-const drillSize = document.getElementById("drillSize");
+const heightInput =
+    document.getElementById("heightInput");
+
+const drillSize =
+    document.getElementById("drillSize");
 
 const generateButton =
     document.getElementById("generateButton");
@@ -35,10 +43,13 @@ const rowsCount =
 const totalCrystals =
     document.getElementById("totalCrystals");
 
+const colorKey =
+    document.getElementById("colorKey");
 
-// ==========================================
+
+// ==================================================
 // APPLICATION STATE
-// ==========================================
+// ==================================================
 
 const state = {
 
@@ -60,24 +71,25 @@ const state = {
 
     rows: 0,
 
-    totalCells: 0
+    totalCells: 0,
+
+    grid: [],
+
+    colorsUsed: new Map()
 
 };
 
 
-// ==========================================
+// ==================================================
 // CONSTANTS
-// ==========================================
+// ==================================================
 
-// 2.5 mm crystal means approximately
-// 4 crystals per centimeter.
-
-const MILLIMETERS_PER_CENTIMETER = 10;
+const MM_PER_CM = 10;
 
 
-// ==========================================
+// ==================================================
 // IMAGE UPLOAD
-// ==========================================
+// ==================================================
 
 imageInput.addEventListener(
     "change",
@@ -87,14 +99,13 @@ imageInput.addEventListener(
 
 function handleImageUpload(event) {
 
-    const file = event.target.files[0];
+    const file =
+        event.target.files[0];
 
     if (!file) {
         return;
     }
 
-
-    // Check that the file is actually an image.
 
     if (!file.type.startsWith("image/")) {
 
@@ -108,8 +119,6 @@ function handleImageUpload(event) {
     }
 
 
-    // Remove previous object URL.
-
     if (state.imageURL) {
 
         URL.revokeObjectURL(
@@ -118,18 +127,14 @@ function handleImageUpload(event) {
     }
 
 
-    // Create a temporary URL.
-
-    const imageURL =
+    const url =
         URL.createObjectURL(file);
 
+    state.imageURL = url;
 
-    state.imageURL = imageURL;
 
-
-    // Create image object.
-
-    const image = new Image();
+    const image =
+        new Image();
 
 
     image.onload = function () {
@@ -149,12 +154,7 @@ function handleImageUpload(event) {
             `${state.imageHeight}px`;
 
 
-        // Show image preview.
-
         showImagePreview();
-
-
-        // Calculate initial grid.
 
         calculateGrid();
     };
@@ -166,7 +166,7 @@ function handleImageUpload(event) {
             "The image could not be loaded."
         );
 
-        URL.revokeObjectURL(imageURL);
+        URL.revokeObjectURL(url);
 
         state.imageURL = null;
 
@@ -174,13 +174,13 @@ function handleImageUpload(event) {
     };
 
 
-    image.src = imageURL;
+    image.src = url;
 }
 
 
-// ==========================================
-// SHOW IMAGE PREVIEW
-// ==========================================
+// ==================================================
+// ORIGINAL IMAGE PREVIEW
+// ==================================================
 
 function showImagePreview() {
 
@@ -192,27 +192,26 @@ function showImagePreview() {
     previewContainer.innerHTML = "";
 
 
-    const previewImage =
+    const image =
         document.createElement("img");
 
 
-    previewImage.src =
+    image.src =
         state.imageURL;
 
-
-    previewImage.alt =
+    image.alt =
         "Uploaded image preview";
 
 
     previewContainer.appendChild(
-        previewImage
+        image
     );
 }
 
 
-// ==========================================
-// INPUT LISTENERS
-// ==========================================
+// ==================================================
+// INPUTS
+// ==================================================
 
 widthInput.addEventListener(
     "input",
@@ -232,9 +231,9 @@ drillSize.addEventListener(
 );
 
 
-// ==========================================
-// CALCULATE GRID
-// ==========================================
+// ==================================================
+// GRID CALCULATION
+// ==================================================
 
 function calculateGrid() {
 
@@ -244,11 +243,9 @@ function calculateGrid() {
     const heightCm =
         Number(heightInput.value);
 
-    const drillSizeMm =
+    const drillMm =
         Number(drillSize.value);
 
-
-    // Validate dimensions.
 
     if (
         !Number.isFinite(widthCm) ||
@@ -264,8 +261,8 @@ function calculateGrid() {
 
 
     if (
-        !Number.isFinite(drillSizeMm) ||
-        drillSizeMm <= 0
+        !Number.isFinite(drillMm) ||
+        drillMm <= 0
     ) {
 
         resetStats();
@@ -281,43 +278,32 @@ function calculateGrid() {
         heightCm;
 
     state.drillSizeMm =
-        drillSizeMm;
+        drillMm;
 
-
-    // Convert centimeters to millimeters.
 
     const widthMm =
-        widthCm *
-        MILLIMETERS_PER_CENTIMETER;
-
+        widthCm * MM_PER_CM;
 
     const heightMm =
-        heightCm *
-        MILLIMETERS_PER_CENTIMETER;
-
-
-    // Calculate number of crystals.
-
-    const columns =
-        Math.round(
-            widthMm /
-            drillSizeMm
-        );
-
-
-    const rows =
-        Math.round(
-            heightMm /
-            drillSizeMm
-        );
+        heightCm * MM_PER_CM;
 
 
     state.columns =
-        Math.max(1, columns);
+        Math.max(
+            1,
+            Math.round(
+                widthMm / drillMm
+            )
+        );
 
 
     state.rows =
-        Math.max(1, rows);
+        Math.max(
+            1,
+            Math.round(
+                heightMm / drillMm
+            )
+        );
 
 
     state.totalCells =
@@ -329,9 +315,9 @@ function calculateGrid() {
 }
 
 
-// ==========================================
-// UPDATE STATISTICS
-// ==========================================
+// ==================================================
+// STATS
+// ==================================================
 
 function updateStats() {
 
@@ -340,12 +326,10 @@ function updateStats() {
             state.columns
         );
 
-
     rowsCount.textContent =
         formatNumber(
             state.rows
         );
-
 
     totalCrystals.textContent =
         formatNumber(
@@ -353,10 +337,6 @@ function updateStats() {
         );
 }
 
-
-// ==========================================
-// RESET STATISTICS
-// ==========================================
 
 function resetStats() {
 
@@ -370,28 +350,535 @@ function resetStats() {
 }
 
 
-// ==========================================
-// NUMBER FORMATTER
-// ==========================================
+// ==================================================
+// NUMBER FORMAT
+// ==================================================
 
-function formatNumber(number) {
+function formatNumber(value) {
 
-    return Number(number)
+    return Number(value)
         .toLocaleString("en-US");
 }
 
 
-// ==========================================
-// GENERATE BUTTON
-// ==========================================
+// ==================================================
+// RGB → HEX
+// ==================================================
+
+function rgbToHex(r, g, b) {
+
+    return (
+        "#" +
+        [r, g, b]
+            .map(value =>
+                Math
+                    .max(0, Math.min(255, value))
+                    .toString(16)
+                    .padStart(2, "0")
+            )
+            .join("")
+            .toUpperCase()
+    );
+}
+
+
+// ==================================================
+// HEX → RGB
+// ==================================================
+
+function hexToRgb(hex) {
+
+    const clean =
+        hex
+            .replace("#", "")
+            .trim();
+
+
+    if (clean.length !== 6) {
+
+        throw new Error(
+            `Invalid HEX color: ${hex}`
+        );
+    }
+
+
+    return {
+
+        r: parseInt(
+            clean.substring(0, 2),
+            16
+        ),
+
+        g: parseInt(
+            clean.substring(2, 4),
+            16
+        ),
+
+        b: parseInt(
+            clean.substring(4, 6),
+            16
+        )
+    };
+}
+
+
+// ==================================================
+// COLOR DISTANCE
+// ==================================================
+
+function colorDistance(
+    r1,
+    g1,
+    b1,
+    r2,
+    g2,
+    b2
+) {
+
+    const red =
+        r1 - r2;
+
+    const green =
+        g1 - g2;
+
+    const blue =
+        b1 - b2;
+
+
+    /*
+     * Weighted RGB distance.
+     *
+     * Human vision is more sensitive
+     * to green than blue.
+     */
+
+    return (
+        0.299 * red * red +
+        0.587 * green * green +
+        0.114 * blue * blue
+    );
+}
+
+
+// ==================================================
+// FIND CLOSEST CRYSTAL COLOR
+// ==================================================
+
+function findClosestCrystal(
+    r,
+    g,
+    b
+) {
+
+    let closest =
+        null;
+
+    let smallestDistance =
+        Infinity;
+
+
+    for (
+        const color
+        of CRYSTAL_PALETTE
+    ) {
+
+        const rgb =
+            hexToRgb(
+                color.hex
+            );
+
+
+        const distance =
+            colorDistance(
+                r,
+                g,
+                b,
+                rgb.r,
+                rgb.g,
+                rgb.b
+            );
+
+
+        if (
+            distance <
+            smallestDistance
+        ) {
+
+            smallestDistance =
+                distance;
+
+            closest =
+                color;
+        }
+    }
+
+
+    return closest;
+}
+
+
+// ==================================================
+// CREATE ANALYSIS CANVAS
+// ==================================================
+
+function createAnalysisCanvas() {
+
+    if (!state.image) {
+        return null;
+    }
+
+
+    const canvas =
+        document.createElement("canvas");
+
+
+    canvas.width =
+        state.columns;
+
+    canvas.height =
+        state.rows;
+
+
+    const ctx =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently: true
+            }
+        );
+
+
+    /*
+     * IMPORTANT:
+     *
+     * We draw the complete source image
+     * directly into the exact number of
+     * crystal cells.
+     *
+     * This means:
+     *
+     * 30 × 40 cm
+     *
+     * with 2.5 mm crystals
+     *
+     * becomes approximately:
+     *
+     * 120 × 160 cells.
+     */
+
+
+    ctx.drawImage(
+        state.image,
+
+        0,
+        0,
+        state.columns,
+        state.rows
+    );
+
+
+    return canvas;
+}
+
+
+// ==================================================
+// ANALYZE IMAGE
+// ==================================================
+
+function analyzeImage() {
+
+    if (!state.image) {
+
+        throw new Error(
+            "No image loaded."
+        );
+    }
+
+
+    if (
+        state.columns <= 0 ||
+        state.rows <= 0
+    ) {
+
+        throw new Error(
+            "Invalid grid dimensions."
+        );
+    }
+
+
+    const canvas =
+        createAnalysisCanvas();
+
+
+    if (!canvas) {
+
+        throw new Error(
+            "Could not create analysis canvas."
+        );
+    }
+
+
+    const ctx =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently: true
+            }
+        );
+
+
+    const imageData =
+        ctx.getImageData(
+            0,
+            0,
+            state.columns,
+            state.rows
+        );
+
+
+    const pixels =
+        imageData.data;
+
+
+    const grid =
+        new Array(
+            state.rows
+        );
+
+
+    const colorsUsed =
+        new Map();
+
+
+    for (
+        let y = 0;
+        y < state.rows;
+        y++
+    ) {
+
+        grid[y] =
+            new Array(
+                state.columns
+            );
+
+
+        for (
+            let x = 0;
+            x < state.columns;
+            x++
+        ) {
+
+            const index =
+                (
+                    y *
+                    state.columns +
+                    x
+                ) * 4;
+
+
+            const r =
+                pixels[index];
+
+            const g =
+                pixels[index + 1];
+
+            const b =
+                pixels[index + 2];
+
+
+            const crystal =
+                findClosestCrystal(
+                    r,
+                    g,
+                    b
+                );
+
+
+            grid[y][x] =
+                crystal;
+
+
+            if (
+                colorsUsed.has(
+                    crystal.code
+                )
+            ) {
+
+                colorsUsed.get(
+                    crystal.code
+                ).quantity++;
+
+            } else {
+
+                colorsUsed.set(
+                    crystal.code,
+                    {
+                        code:
+                            crystal.code,
+
+                        name:
+                            crystal.name,
+
+                        hex:
+                            crystal.hex,
+
+                        quantity: 1
+                    }
+                );
+            }
+        }
+    }
+
+
+    state.grid =
+        grid;
+
+    state.colorsUsed =
+        colorsUsed;
+
+
+    return grid;
+}
+
+
+// ==================================================
+// COLOR KEY
+// ==================================================
+
+function renderColorKey() {
+
+    if (
+        !state.colorsUsed ||
+        state.colorsUsed.size === 0
+    ) {
+
+        colorKey.textContent =
+            "No colors generated.";
+
+        return;
+    }
+
+
+    const colors =
+        Array.from(
+            state.colorsUsed.values()
+        );
+
+
+    colors.sort(
+        (a, b) =>
+            b.quantity -
+            a.quantity
+    );
+
+
+    const table =
+        document.createElement(
+            "table"
+        );
+
+
+    table.className =
+        "color-table";
+
+
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>DMC Code</th>
+                <th>Color</th>
+                <th>HEX</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+    `;
+
+
+    const tbody =
+        document.createElement(
+            "tbody"
+        );
+
+
+    for (
+        const color
+        of colors
+    ) {
+
+        const row =
+            document.createElement(
+                "tr"
+            );
+
+
+        row.innerHTML = `
+            <td>
+                <strong>
+                    ${escapeHtml(color.code)}
+                </strong>
+            </td>
+
+            <td>
+                ${escapeHtml(color.name)}
+            </td>
+
+            <td>
+                ${escapeHtml(color.hex)}
+            </td>
+
+            <td>
+                ${formatNumber(color.quantity)}
+            </td>
+        `;
+
+
+        tbody.appendChild(
+            row
+        );
+    }
+
+
+    table.appendChild(
+        tbody
+    );
+
+
+    colorKey.innerHTML =
+        "";
+
+
+    colorKey.appendChild(
+        table
+    );
+}
+
+
+// ==================================================
+// HTML ESCAPE
+// ==================================================
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+// ==================================================
+// GENERATE
+// ==================================================
 
 generateButton.addEventListener(
     "click",
-    generateCanvas
+    handleGenerate
 );
 
 
-function generateCanvas() {
+function handleGenerate() {
 
     if (!state.image) {
 
@@ -403,52 +890,40 @@ function generateCanvas() {
     }
 
 
-    calculateGrid();
+    try {
+
+        generateButton.disabled =
+            true;
+
+        generateButton.textContent =
+            "Processing...";
 
 
-    console.log(
-        "Crystal Canvas:",
-        {
-            widthCm:
-                state.canvasWidthCm,
+        calculateGrid();
 
-            heightCm:
-                state.canvasHeightCm,
 
-            drillSizeMm:
-                state.drillSizeMm,
+        /*
+         * Safety limit.
+         *
+         * We do NOT want the browser
+         * freezing because somebody enters
+         * an absurd canvas size.
+         */
 
-            columns:
-                state.columns,
+        const MAX_CELLS =
+            2000000;
 
-            rows:
-                state.rows,
 
-            totalCells:
-                state.totalCells
+        if (
+            state.totalCells >
+            MAX_CELLS
+        ) {
+
+            throw new Error(
+                "The selected canvas is too large. " +
+                "Please choose a smaller size."
+            );
         }
-    );
 
 
-    alert(
-        `Canvas calculated successfully!\n\n` +
-
-        `Size: ` +
-        `${state.canvasWidthCm} × ` +
-        `${state.canvasHeightCm} cm\n` +
-
-        `Grid: ` +
-        `${state.columns} × ` +
-        `${state.rows}\n\n` +
-
-        `Total crystals: ` +
-        `${formatNumber(state.totalCells)}`
-    );
-}
-
-
-// ==========================================
-// INITIAL CALCULATION
-// ==========================================
-
-calculateGrid();
+        analyzeImage
