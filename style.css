@@ -1,0 +1,359 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #f6f4f1;
+    --card: #ffffff;
+    --text: #222222;
+    --muted: #777777;
+    --border: #dddddd;
+    --accent: #222222;
+    --radius: 16px;
+}
+
+body {
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.app-header {
+    text-align: center;
+    padding: 40px 20px 25px;
+}
+
+.app-header h1 {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.app-header p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 15px;
+}
+
+
+/* =========================
+   MAIN APP
+========================= */
+
+.app {
+    width: min(1100px, calc(100% - 30px));
+    margin: 0 auto 60px;
+}
+
+
+/* =========================
+   SECTIONS / CARDS
+========================= */
+
+.upload-section,
+.settings,
+.preview-section,
+.stats,
+.color-key-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+
+/* =========================
+   UPLOAD
+========================= */
+
+.upload-section {
+    text-align: center;
+}
+
+.upload-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--accent);
+    color: white;
+
+    padding: 14px 24px;
+
+    border-radius: 10px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.upload-button:hover {
+    opacity: 0.9;
+}
+
+.upload-button:active {
+    transform: scale(0.98);
+}
+
+#fileName {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+
+/* =========================
+   SETTINGS
+========================= */
+
+.settings h2,
+.preview-section h2,
+.color-key-section h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.size-row {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 15px;
+
+    margin-bottom: 15px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.input-group.full {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+
+    height: 46px;
+
+    padding: 0 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    background: white;
+
+    font-size: 15px;
+
+    outline: none;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: #777777;
+}
+
+
+#generateButton {
+    width: 100%;
+
+    height: 50px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: var(--accent);
+    color: white;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease;
+}
+
+#generateButton:hover {
+    opacity: 0.9;
+}
+
+#generateButton:active {
+    transform: scale(0.99);
+}
+
+
+/* =========================
+   PREVIEW
+========================= */
+
+#previewContainer {
+    min-height: 300px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: auto;
+
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+
+    background: #fafafa;
+
+    padding: 20px;
+
+    color: var(--muted);
+}
+
+#previewContainer img {
+    display: block;
+
+    max-width: 100%;
+    max-height: 700px;
+
+    object-fit: contain;
+
+    border-radius: 6px;
+}
+
+
+/* =========================
+   STATS
+========================= */
+
+.stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 15px;
+}
+
+.stats div {
+    text-align: center;
+
+    padding: 15px;
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.stats span {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    margin-bottom: 7px;
+}
+
+.stats strong {
+    display: block;
+
+    font-size: 22px;
+}
+
+
+/* =========================
+   COLOR KEY
+========================= */
+
+#colorKey {
+    overflow-x: auto;
+}
+
+.color-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 14px;
+}
+
+.color-table th,
+.color-table td {
+    padding: 12px 10px;
+
+    text-align: left;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.color-table th {
+    font-size: 12px;
+
+    color: var(--muted);
+
+    text-transform: uppercase;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 600px) {
+
+    .app-header {
+        padding-top: 28px;
+    }
+
+    .app-header h1 {
+        font-size: 28px;
+    }
+
+    .app {
+        width: min(100% - 20px, 1100px);
+    }
+
+    .upload-section,
+    .settings,
+    .preview-section,
+    .stats,
+    .color-key-section {
+        padding: 18px;
+    }
+
+    .size-row {
+        grid-template-columns: 1fr;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+}
