@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Crystal 5D Converter</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="app-header">
+        <h1>Crystal 5D</h1>
+        <p>Photo to Numbered Crystal Canvas</p>
+    </header>
+
+    <main class="app">
+
+        <section class="upload-section">
+
+            <label for="imageInput" class="upload-button">
+                Choose Photo
+            </label>
+
+            <input
+                type="file"
+                id="imageInput"
+                accept="image/jpeg,image/png,image/webp"
+                hidden
+            >
+
+            <p id="fileName">
+                No image selected
+            </p>
+
+        </section>
+
+
+        <section class="settings">
+
+            <h2>Canvas Size</h2>
+
+            <div class="size-row">
+
+                <div class="input-group">
+                    <label for="widthInput">
+                        Width (cm)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="widthInput"
+                        min="1"
+                        max="200"
+                        step="0.1"
+                        value="30"
+                    >
+                </div>
+
+
+                <div class="input-group">
+                    <label for="heightInput">
+                        Height (cm)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="heightInput"
+                        min="1"
+                        max="200"
+                        step="0.1"
+                        value="40"
+                    >
+                </div>
+
+            </div>
+
+
+            <div class="input-group full">
+
+                <label for="drillSize">
+                    Crystal Size
+                </label>
+
+                <select id="drillSize">
+
+                    <option value="2.5">
+                        Square Crystal — 2.5 mm
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <button id="generateButton">
+                Generate Crystal Canvas
+            </button>
+
+        </section>
+
+
+        <section class="preview-section">
+
+            <h2>Preview</h2>
+
+            <div id="previewContainer">
+
+                <p>
+                    Upload an image to start.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <section class="stats">
+
+            <div>
+                <span>Columns</span>
+                <strong id="columnsCount">0</strong>
+            </div>
+
+            <div>
+                <span>Rows</span>
+                <strong id="rowsCount">0</strong>
+            </div>
+
+            <div>
+                <span>Total Crystals</span>
+                <strong id="totalCrystals">0</strong>
+            </div>
+
+        </section>
+
+
+        <section class="color-key-section">
+
+            <h2>Color Key</h2>
+
+            <div id="colorKey">
+                Generate a canvas to see the color codes.
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="palette.js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>
