@@ -3,7 +3,7 @@
 /*
 ====================================================
 CRYSTAL 5D CONVERTER
-Image analysis + DMC color matching + Symbols & Canvas Visual
+Optimized Async Conversion for Mobile
 ====================================================
 */
 
@@ -34,6 +34,9 @@ const SYMBOLS_LIST = [
     "@", "#", "$", "%", "&", "*", "+", "=", "?", "!", "♦", "♠", "♣", "♥"
 ];
 
+// Cache to speed up color distance lookups
+const colorMatchCache = new Map();
+
 // ==================================================
 // APPLICATION STATE
 // ==================================================
@@ -53,14 +56,10 @@ const state = {
     colorsUsed: new Map()
 };
 
-// ==================================================
-// CONSTANTS
-// ==================================================
-
 const MM_PER_CM = 10;
 
 // ==================================================
-// IMAGE UPLOAD (SAFE BASE64 READER)
+// IMAGE UPLOAD
 // ==================================================
 
 if (imageInput) {
@@ -70,9 +69,7 @@ if (imageInput) {
 function handleImageUpload(event) {
     const file = event.target.files[0];
 
-    if (!file) {
-        return;
-    }
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
         alert("Please choose a valid image file.");
@@ -114,13 +111,11 @@ function handleImageUpload(event) {
 }
 
 // ==================================================
-// ORIGINAL IMAGE PREVIEW
+// PREVIEW & INPUTS
 // ==================================================
 
 function showImagePreview() {
-    if (!state.image || !previewContainer) {
-        return;
-    }
+    if (!state.image || !previewContainer) return;
 
     previewContainer.innerHTML = "";
 
@@ -134,17 +129,9 @@ function showImagePreview() {
     previewContainer.appendChild(image);
 }
 
-// ==================================================
-// INPUTS
-// ==================================================
-
 if (widthInput) widthInput.addEventListener("input", calculateGrid);
 if (heightInput) heightInput.addEventListener("input", calculateGrid);
 if (drillSize) drillSize.addEventListener("change", calculateGrid);
-
-// ==================================================
-// GRID CALCULATION
-// ==================================================
 
 function calculateGrid() {
     if (!widthInput || !heightInput || !drillSize) return;
@@ -153,12 +140,7 @@ function calculateGrid() {
     const heightCm = Number(heightInput.value);
     const drillMm = Number(drillSize.value);
 
-    if (
-        !Number.isFinite(widthCm) ||
-        !Number.isFinite(heightCm) ||
-        widthCm <= 0 ||
-        heightCm <= 0
-    ) {
+    if (!Number.isFinite(widthCm) || !Number.isFinite(heightCm) || widthCm <= 0 || heightCm <= 0) {
         resetStats();
         return;
     }
@@ -182,10 +164,6 @@ function calculateGrid() {
     updateStats();
 }
 
-// ==================================================
-// STATS
-// ==================================================
-
 function updateStats() {
     if (columnsCount) columnsCount.textContent = formatNumber(state.columns);
     if (rowsCount) rowsCount.textContent = formatNumber(state.rows);
@@ -199,25 +177,12 @@ function resetStats() {
     updateStats();
 }
 
-// ==================================================
-// NUMBER FORMAT
-// ==================================================
-
 function formatNumber(value) {
     return Number(value).toLocaleString("en-US");
 }
 
-// ==================================================
-// HEX → RGB
-// ==================================================
-
 function hexToRgb(hex) {
     const clean = hex.replace("#", "").trim();
-
-    if (clean.length !== 6) {
-        throw new Error(`Invalid HEX color: ${hex}`);
-    }
-
     return {
         r: parseInt(clean.substring(0, 2), 16),
         g: parseInt(clean.substring(2, 4), 16),
@@ -225,23 +190,12 @@ function hexToRgb(hex) {
     };
 }
 
-// ==================================================
-// COLOR DISTANCE
-// ==================================================
-
-function colorDistance(r1, g1, b1, r2, g2, b2) {
-    const red = r1 - r2;
-    const green = g1 - g2;
-    const blue = b1 - b2;
-
-    return 0.299 * red * red + 0.587 * green * green + 0.114 * blue * blue;
-}
-
-// ==================================================
-// FIND CLOSEST CRYSTAL COLOR
-// ==================================================
-
 function findClosestCrystal(r, g, b) {
+    const cacheKey = `${r},${g},${b}`;
+    if (colorMatchCache.has(cacheKey)) {
+        return colorMatchCache.get(cacheKey);
+    }
+
     if (typeof CRYSTAL_PALETTE === "undefined") {
         throw new Error("CRYSTAL_PALETTE is not defined. Check palette.js");
     }
@@ -249,9 +203,13 @@ function findClosestCrystal(r, g, b) {
     let closest = null;
     let smallestDistance = Infinity;
 
-    for (const color of CRYSTAL_PALETTE) {
+    for (let i = 0; i < CRYSTAL_PALETTE.length; i++) {
+        const color = CRYSTAL_PALETTE[i];
         const rgb = hexToRgb(color.hex);
-        const distance = colorDistance(r, g, b, rgb.r, rgb.g, rgb.b);
+        const red = r - rgb.r;
+        const green = g - rgb.g;
+        const blue = b - rgb.b;
+        const distance = 0.299 * red * red + 0.587 * green * green + 0.114 * blue * blue;
 
         if (distance < smallestDistance) {
             smallestDistance = distance;
@@ -259,18 +217,21 @@ function findClosestCrystal(r, g, b) {
         }
     }
 
+    colorMatchCache.set(cacheKey, closest);
     return closest;
 }
 
+function getTextColorForBackground(hex) {
+    const rgb = hexToRgb(hex);
+    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+    return brightness > 128 ? "#000000" : "#FFFFFF";
+}
+
 // ==================================================
-// CREATE ANALYSIS CANVAS
+// FAST ASYNC IMAGE ANALYSIS
 // ==================================================
 
-function createAnalysisCanvas() {
-    if (!state.image) {
-        return null;
-    }
-
+async function analyzeImageAsync() {
     const canvas = document.createElement("canvas");
     canvas.width = state.columns;
     canvas.height = state.rows;
@@ -278,29 +239,6 @@ function createAnalysisCanvas() {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.drawImage(state.image, 0, 0, state.columns, state.rows);
 
-    return canvas;
-}
-
-// ==================================================
-// ANALYZE IMAGE & ASSIGN SYMBOLS
-// ==================================================
-
-function analyzeImage() {
-    if (!state.image) {
-        throw new Error("No image loaded.");
-    }
-
-    if (state.columns <= 0 || state.rows <= 0) {
-        throw new Error("Invalid grid dimensions.");
-    }
-
-    const canvas = createAnalysisCanvas();
-
-    if (!canvas) {
-        throw new Error("Could not create analysis canvas.");
-    }
-
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     const imageData = ctx.getImageData(0, 0, state.columns, state.rows);
     const pixels = imageData.data;
 
@@ -340,26 +278,19 @@ function analyzeImage() {
                 symbol: colorData.symbol
             };
         }
+
+        // تحرير معالج الموبايل كل 20 سطر لمنع تجميد الشاشة
+        if (y % 20 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
     }
 
     state.grid = grid;
     state.colorsUsed = colorsUsed;
-
-    return grid;
 }
 
 // ==================================================
-// HELPER: CALCULATE TEXT CONTRAST (BLACK/WHITE)
-// ==================================================
-
-function getTextColorForBackground(hex) {
-    const rgb = hexToRgb(hex);
-    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-    return brightness > 128 ? "#000000" : "#FFFFFF";
-}
-
-// ==================================================
-// RENDER CRYSTAL CANVAS WITH SYMBOLS
+// RENDER CANVAS
 // ==================================================
 
 function renderCrystalCanvas() {
@@ -370,7 +301,7 @@ function renderCrystalCanvas() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    const cellSize = 16; 
+    const cellSize = 14; 
 
     canvas.width = state.columns * cellSize;
     canvas.height = state.rows * cellSize;
@@ -379,7 +310,7 @@ function renderCrystalCanvas() {
     canvas.style.borderRadius = "8px";
     canvas.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
 
-    ctx.font = "bold 10px sans-serif";
+    ctx.font = "bold 9px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -387,16 +318,13 @@ function renderCrystalCanvas() {
         for (let x = 0; x < state.columns; x++) {
             const crystal = state.grid[y][x];
 
-            // 1. رسم المربع الملون
             ctx.fillStyle = crystal.hex;
             ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
 
-            // 2. رسم شبكة الحدود
-            ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.12)";
             ctx.lineWidth = 0.5;
             ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
 
-            // 3. كتابة الرمز فوق اللون
             ctx.fillStyle = getTextColorForBackground(crystal.hex);
             ctx.fillText(
                 crystal.symbol,
@@ -410,7 +338,7 @@ function renderCrystalCanvas() {
 }
 
 // ==================================================
-// COLOR KEY TABLE WITH SYMBOLS
+// RENDER COLOR KEY
 // ==================================================
 
 function renderColorKey() {
@@ -443,7 +371,6 @@ function renderColorKey() {
 
     for (const color of colors) {
         const row = document.createElement("tr");
-
         const textColor = getTextColorForBackground(color.hex);
 
         row.innerHTML = `
@@ -466,10 +393,6 @@ function renderColorKey() {
     colorKey.appendChild(table);
 }
 
-// ==================================================
-// HTML ESCAPE
-// ==================================================
-
 function escapeHtml(value) {
     return String(value)
         .replaceAll("&", "&amp;")
@@ -480,14 +403,14 @@ function escapeHtml(value) {
 }
 
 // ==================================================
-// GENERATE BUTTON EVENT
+// GENERATE BUTTON
 // ==================================================
 
 if (generateButton) {
     generateButton.addEventListener("click", handleGenerate);
 }
 
-function handleGenerate() {
+async function handleGenerate() {
     if (!state.image) {
         alert("Please upload an image first.");
         return;
@@ -495,25 +418,17 @@ function handleGenerate() {
 
     try {
         generateButton.disabled = true;
-        generateButton.textContent = "Processing...";
+        generateButton.textContent = "Processing... Please wait";
 
         calculateGrid();
 
-        const MAX_CELLS = 2000000;
+        // 1. تحويل الصورة بسرعة وبدون تجميد
+        await analyzeImageAsync();
 
-        if (state.totalCells > MAX_CELLS) {
-            throw new Error(
-                "The selected canvas is too large. Please choose a smaller size."
-            );
-        }
-
-        // 1. تحليل الصورة وتخصيص الألوان والرموز
-        analyzeImage();
-
-        // 2. رسم لوحة شبكة الكريستال المطبوع عليها الرموز
+        // 2. رسم اللوحة والرموز
         renderCrystalCanvas();
 
-        // 3. عرض جدول الأكواد مع الرموز والكميات
+        // 3. طباعة الجدول
         renderColorKey();
 
     } catch (error) {
