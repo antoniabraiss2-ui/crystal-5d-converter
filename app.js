@@ -1,73 +1,136 @@
+"use strict";
+
+/*
+====================================================
+CRYSTAL 5D CONVERTER
+Image analysis + DMC color matching
+====================================================
+*/
+
 // ==================================================
-// GENERATE
+// DOM ELEMENTS
 // ==================================================
 
-generateButton.addEventListener(
-    "click",
-    handleGenerate
-);
+const imageInput = document.getElementById("imageInput");
+const fileName = document.getElementById("fileName");
+const widthInput = document.getElementById("widthInput");
+const heightInput = document.getElementById("heightInput");
+const drillSize = document.getElementById("drillSize");
+const generateButton = document.getElementById("generateButton");
+const previewContainer = document.getElementById("previewContainer");
+const columnsCount = document.getElementById("columnsCount");
+const rowsCount = document.getElementById("rowsCount");
+const totalCrystals = document.getElementById("totalCrystals");
+const colorKey = document.getElementById("colorKey");
 
+// ==================================================
+// APPLICATION STATE
+// ==================================================
 
-function handleGenerate() {
+const state = {
+    image: null,
+    imageURL: null,
+    imageWidth: 0,
+    imageHeight: 0,
+    canvasWidthCm: 30,
+    canvasHeightCm: 40,
+    drillSizeMm: 2.5,
+    columns: 0,
+    rows: 0,
+    totalCells: 0,
+    grid: [],
+    colorsUsed: new Map()
+};
 
-    if (!state.image) {
+// ==================================================
+// CONSTANTS
+// ==================================================
 
-        alert(
-            "Please upload an image first."
-        );
+const MM_PER_CM = 10;
 
+// ==================================================
+// IMAGE UPLOAD
+// ==================================================
+
+if (imageInput) {
+    imageInput.addEventListener("change", handleImageUpload);
+}
+
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+
+    if (!file) {
         return;
     }
 
+    if (!file.type.startsWith("image/")) {
+        alert("Please choose a valid image file.");
+        imageInput.value = "";
+        return;
+    }
 
-    try {
+    // تنظيف الرابط السابق لمنع استهلاك الذاكرة
+    if (state.imageURL) {
+        URL.revokeObjectURL(state.imageURL);
+    }
 
-        generateButton.disabled =
-            true;
+    const url = URL.createObjectURL(file);
+    state.imageURL = url;
 
-        generateButton.textContent =
-            "Processing...";
+    const image = new Image();
 
+    image.onload = function () {
+        state.image = image;
+        state.imageWidth = image.naturalWidth;
+        state.imageHeight = image.naturalHeight;
 
-        calculateGrid();
-
-
-        /*
-         * Safety limit.
-         */
-
-        const MAX_CELLS =
-            2000000;
-
-
-        if (
-            state.totalCells >
-            MAX_CELLS
-        ) {
-
-            throw new Error(
-                "The selected canvas is too large. " +
-                "Please choose a smaller size."
-            );
+        if (fileName) {
+            fileName.textContent = `${file.name} — ${state.imageWidth} × ${state.imageHeight}px`;
         }
 
-        // 1. تحليل الصورة وتوليد شبكة الألوان
-        analyzeImage();
+        showImagePreview();
+        calculateGrid();
+    };
 
-        // 2. عرض جدول الألوان والأكواد المستعملة
-        renderColorKey();
+    image.onerror = function () {
+        alert("The image could not be loaded.");
+        URL.revokeObjectURL(url);
+        state.imageURL = null;
+        state.image = null;
+    };
 
-        alert("Processing completed successfully!");
-
-    } catch (error) {
-
-        alert(error.message);
-
-    } finally {
-
-        generateButton.disabled = false;
-
-        generateButton.textContent = "Generate Grid";
-
-    }
+    image.src = url;
 }
+
+// ==================================================
+// ORIGINAL IMAGE PREVIEW
+// ==================================================
+
+function showImagePreview() {
+    if (!state.image || !previewContainer) {
+        return;
+    }
+
+    previewContainer.innerHTML = "";
+
+    const image = document.createElement("img");
+    image.src = state.imageURL;
+    image.alt = "Uploaded image preview";
+    image.style.maxWidth = "100%";
+    image.style.height = "auto";
+    image.style.borderRadius = "8px";
+
+    previewContainer.appendChild(image);
+}
+
+// ==================================================
+// INPUT LISTENERS
+// ==================================================
+
+if (widthInput) widthInput.addEventListener("input", calculateGrid);
+if (heightInput) heightInput.addEventListener("input", calculateGrid);
+if (drillSize) drillSize.addEventListener("change", calculateGrid);
+
+// ==================================================
+// GRID CALCULATION
+// =
