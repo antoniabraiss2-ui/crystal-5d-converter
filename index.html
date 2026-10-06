@@ -10,7 +10,14 @@
 
     <title>Crystal 5D Converter</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./style.css">
+
+    <style>
+        /* إخفاء زر الملفات بطريقة آمنة لتتيح متصفحات الموبايل فتحه */
+        .hidden-input {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -24,15 +31,16 @@
 
         <section class="upload-section">
 
-            <label for="imageInput" class="upload-button">
+            <!-- تم ربط الزر بـ input عبر id=imageInput -->
+            <label for="imageInput" class="upload-button" style="cursor: pointer;">
                 Choose Photo
             </label>
 
             <input
                 type="file"
                 id="imageInput"
-                accept="image/jpeg,image/png,image/webp"
-                hidden
+                accept="image/jpeg,image/png,image/webp,image/*"
+                class="hidden-input"
             >
 
             <p id="fileName">
@@ -154,8 +162,9 @@
     </main>
 
 
-    <script src="palette.js"></script>
-    <script src="app.js"></script>
+    <!-- ترتيب الملفات الصحيح بالمسارات النسبية -->
+    <script src="./palette.js"></script>
+    <script src="./app.js"></script>
 
 </body>
 </html>
