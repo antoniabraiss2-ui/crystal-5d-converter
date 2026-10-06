@@ -60,7 +60,7 @@ const state = {
 const MM_PER_CM = 10;
 
 // ==================================================
-// IMAGE UPLOAD
+// IMAGE UPLOAD (SAFE BASE64 READER)
 // ==================================================
 
 if (imageInput) {
@@ -80,36 +80,37 @@ function handleImageUpload(event) {
         return;
     }
 
-    if (state.imageURL) {
-        URL.revokeObjectURL(state.imageURL);
-    }
+    const reader = new FileReader();
 
-    const url = URL.createObjectURL(file);
-    state.imageURL = url;
+    reader.onload = function (e) {
+        const url = e.target.result;
+        state.imageURL = url;
 
-    const image = new Image();
+        const image = new Image();
 
-    image.onload = function () {
-        state.image = image;
-        state.imageWidth = image.naturalWidth;
-        state.imageHeight = image.naturalHeight;
+        image.onload = function () {
+            state.image = image;
+            state.imageWidth = image.naturalWidth;
+            state.imageHeight = image.naturalHeight;
 
-        if (fileName) {
-            fileName.textContent = `${file.name} — ${state.imageWidth} × ${state.imageHeight}px`;
-        }
+            if (fileName) {
+                fileName.textContent = `${file.name} — ${state.imageWidth} × ${state.imageHeight}px`;
+            }
 
-        showImagePreview();
-        calculateGrid();
+            showImagePreview();
+            calculateGrid();
+        };
+
+        image.onerror = function () {
+            alert("The image could not be loaded.");
+            state.imageURL = null;
+            state.image = null;
+        };
+
+        image.src = url;
     };
 
-    image.onerror = function () {
-        alert("The image could not be loaded.");
-        URL.revokeObjectURL(url);
-        state.imageURL = null;
-        state.image = null;
-    };
-
-    image.src = url;
+    reader.readAsDataURL(file);
 }
 
 // ==================================================
@@ -369,7 +370,7 @@ function renderCrystalCanvas() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    const cellSize = 16; // حجم المربع ليتسع للرمز بوضوح
+    const cellSize = 16; 
 
     canvas.width = state.columns * cellSize;
     canvas.height = state.rows * cellSize;
@@ -395,7 +396,7 @@ function renderCrystalCanvas() {
             ctx.lineWidth = 0.5;
             ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
 
-            // 3. كتابة الرمز فوق اللون بلون يتوافق مع الخلفية
+            // 3. كتابة الرمز فوق اللون
             ctx.fillStyle = getTextColorForBackground(crystal.hex);
             ctx.fillText(
                 crystal.symbol,
