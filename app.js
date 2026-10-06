@@ -3,7 +3,7 @@
 /*
 ====================================================
 CRYSTAL 5D CONVERTER
-Image analysis + DMC color matching
+Image analysis + DMC color matching + Symbols & Canvas Visual
 ====================================================
 */
 
@@ -22,6 +22,17 @@ const columnsCount = document.getElementById("columnsCount");
 const rowsCount = document.getElementById("rowsCount");
 const totalCrystals = document.getElementById("totalCrystals");
 const colorKey = document.getElementById("colorKey");
+
+// ==================================================
+// SYMBOLS PALETTE FOR CANVAS
+// ==================================================
+
+const SYMBOLS_LIST = [
+    "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", 
+    "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+    "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "@", "#", "$", "%", "&", "*", "+", "=", "?", "!", "♦", "♠", "♣", "♥"
+];
 
 // ==================================================
 // APPLICATION STATE
@@ -117,6 +128,7 @@ function showImagePreview() {
     image.alt = "Uploaded image preview";
     image.style.maxWidth = "100%";
     image.style.height = "auto";
+    image.style.borderRadius = "8px";
 
     previewContainer.appendChild(image);
 }
@@ -195,20 +207,6 @@ function formatNumber(value) {
 }
 
 // ==================================================
-// RGB → HEX
-// ==================================================
-
-function rgbToHex(r, g, b) {
-    return (
-        "#" +
-        [r, g, b]
-            .map(value => Math.max(0, Math.min(255, value)).toString(16).padStart(2, "0"))
-            .join("")
-            .toUpperCase()
-    );
-}
-
-// ==================================================
 // HEX → RGB
 // ==================================================
 
@@ -244,7 +242,7 @@ function colorDistance(r1, g1, b1, r2, g2, b2) {
 
 function findClosestCrystal(r, g, b) {
     if (typeof CRYSTAL_PALETTE === "undefined") {
-        throw new Error("CRYSTAL_PALETTE is not defined.");
+        throw new Error("CRYSTAL_PALETTE is not defined. Check palette.js");
     }
 
     let closest = null;
@@ -283,7 +281,7 @@ function createAnalysisCanvas() {
 }
 
 // ==================================================
-// ANALYZE IMAGE
+// ANALYZE IMAGE & ASSIGN SYMBOLS
 // ==================================================
 
 function analyzeImage() {
@@ -307,6 +305,7 @@ function analyzeImage() {
 
     const grid = new Array(state.rows);
     const colorsUsed = new Map();
+    let symbolIndex = 0;
 
     for (let y = 0; y < state.rows; y++) {
         grid[y] = new Array(state.columns);
@@ -318,18 +317,27 @@ function analyzeImage() {
             const b = pixels[index + 2];
 
             const crystal = findClosestCrystal(r, g, b);
-            grid[y][x] = crystal;
 
-            if (colorsUsed.has(crystal.code)) {
-                colorsUsed.get(crystal.code).quantity++;
-            } else {
+            if (!colorsUsed.has(crystal.code)) {
+                const assignedSymbol = SYMBOLS_LIST[symbolIndex % SYMBOLS_LIST.length];
+                symbolIndex++;
+
                 colorsUsed.set(crystal.code, {
                     code: crystal.code,
                     name: crystal.name,
                     hex: crystal.hex,
+                    symbol: assignedSymbol,
                     quantity: 1
                 });
+            } else {
+                colorsUsed.get(crystal.code).quantity++;
             }
+
+            const colorData = colorsUsed.get(crystal.code);
+            grid[y][x] = {
+                ...crystal,
+                symbol: colorData.symbol
+            };
         }
     }
 
@@ -340,7 +348,68 @@ function analyzeImage() {
 }
 
 // ==================================================
-// COLOR KEY
+// HELPER: CALCULATE TEXT CONTRAST (BLACK/WHITE)
+// ==================================================
+
+function getTextColorForBackground(hex) {
+    const rgb = hexToRgb(hex);
+    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+    return brightness > 128 ? "#000000" : "#FFFFFF";
+}
+
+// ==================================================
+// RENDER CRYSTAL CANVAS WITH SYMBOLS
+// ==================================================
+
+function renderCrystalCanvas() {
+    if (!state.grid || state.grid.length === 0 || !previewContainer) return;
+
+    previewContainer.innerHTML = "";
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const cellSize = 16; // حجم المربع ليتسع للرمز بوضوح
+
+    canvas.width = state.columns * cellSize;
+    canvas.height = state.rows * cellSize;
+    canvas.style.maxWidth = "100%";
+    canvas.style.height = "auto";
+    canvas.style.borderRadius = "8px";
+    canvas.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (let y = 0; y < state.rows; y++) {
+        for (let x = 0; x < state.columns; x++) {
+            const crystal = state.grid[y][x];
+
+            // 1. رسم المربع الملون
+            ctx.fillStyle = crystal.hex;
+            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+
+            // 2. رسم شبكة الحدود
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+
+            // 3. كتابة الرمز فوق اللون بلون يتوافق مع الخلفية
+            ctx.fillStyle = getTextColorForBackground(crystal.hex);
+            ctx.fillText(
+                crystal.symbol,
+                x * cellSize + cellSize / 2,
+                y * cellSize + cellSize / 2 + 0.5
+            );
+        }
+    }
+
+    previewContainer.appendChild(canvas);
+}
+
+// ==================================================
+// COLOR KEY TABLE WITH SYMBOLS
 // ==================================================
 
 function renderColorKey() {
@@ -360,8 +429,9 @@ function renderColorKey() {
     table.innerHTML = `
         <thead>
             <tr>
+                <th>Symbol</th>
                 <th>DMC Code</th>
-                <th>Color</th>
+                <th>Color Name</th>
                 <th>HEX</th>
                 <th>Quantity</th>
             </tr>
@@ -373,7 +443,14 @@ function renderColorKey() {
     for (const color of colors) {
         const row = document.createElement("tr");
 
+        const textColor = getTextColorForBackground(color.hex);
+
         row.innerHTML = `
+            <td>
+                <span style="display:inline-block; width:22px; height:22px; line-height:22px; background-color:${color.hex}; color:${textColor}; text-align:center; border-radius:4px; font-weight:bold; border:1px solid #ccc;">
+                    ${escapeHtml(color.symbol)}
+                </span>
+            </td>
             <td><strong>${escapeHtml(color.code)}</strong></td>
             <td>${escapeHtml(color.name)}</td>
             <td>${escapeHtml(color.hex)}</td>
@@ -402,7 +479,7 @@ function escapeHtml(value) {
 }
 
 // ==================================================
-// GENERATE BUTTON
+// GENERATE BUTTON EVENT
 // ==================================================
 
 if (generateButton) {
@@ -429,7 +506,13 @@ function handleGenerate() {
             );
         }
 
+        // 1. تحليل الصورة وتخصيص الألوان والرموز
         analyzeImage();
+
+        // 2. رسم لوحة شبكة الكريستال المطبوع عليها الرموز
+        renderCrystalCanvas();
+
+        // 3. عرض جدول الأكواد مع الرموز والكميات
         renderColorKey();
 
     } catch (error) {
