@@ -3,7 +3,7 @@
 /*
 ====================================================
 CRYSTAL 5D CONVERTER
-Optimized Async Conversion for Mobile
+Optimized Async Conversion + Download Button
 ====================================================
 */
 
@@ -17,6 +17,7 @@ const widthInput = document.getElementById("widthInput");
 const heightInput = document.getElementById("heightInput");
 const drillSize = document.getElementById("drillSize");
 const generateButton = document.getElementById("generateButton");
+const downloadButton = document.getElementById("downloadButton");
 const previewContainer = document.getElementById("previewContainer");
 const columnsCount = document.getElementById("columnsCount");
 const rowsCount = document.getElementById("rowsCount");
@@ -34,7 +35,6 @@ const SYMBOLS_LIST = [
     "@", "#", "$", "%", "&", "*", "+", "=", "?", "!", "♦", "♠", "♣", "♥"
 ];
 
-// Cache to speed up color distance lookups
 const colorMatchCache = new Map();
 
 // ==================================================
@@ -53,7 +53,8 @@ const state = {
     rows: 0,
     totalCells: 0,
     grid: [],
-    colorsUsed: new Map()
+    colorsUsed: new Map(),
+    generatedCanvas: null
 };
 
 const MM_PER_CM = 10;
@@ -68,7 +69,6 @@ if (imageInput) {
 
 function handleImageUpload(event) {
     const file = event.target.files[0];
-
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -118,6 +118,7 @@ function showImagePreview() {
     if (!state.image || !previewContainer) return;
 
     previewContainer.innerHTML = "";
+    if (downloadButton) downloadButton.style.display = "none";
 
     const image = document.createElement("img");
     image.src = state.imageURL;
@@ -228,7 +229,7 @@ function getTextColorForBackground(hex) {
 }
 
 // ==================================================
-// FAST ASYNC IMAGE ANALYSIS
+// ASYNC IMAGE ANALYSIS
 // ==================================================
 
 async function analyzeImageAsync() {
@@ -279,7 +280,6 @@ async function analyzeImageAsync() {
             };
         }
 
-        // تحرير معالج الموبايل كل 20 سطر لمنع تجميد الشاشة
         if (y % 20 === 0) {
             await new Promise(resolve => setTimeout(resolve, 0));
         }
@@ -301,7 +301,7 @@ function renderCrystalCanvas() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    const cellSize = 14; 
+    const cellSize = 16; 
 
     canvas.width = state.columns * cellSize;
     canvas.height = state.rows * cellSize;
@@ -310,7 +310,7 @@ function renderCrystalCanvas() {
     canvas.style.borderRadius = "8px";
     canvas.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
 
-    ctx.font = "bold 9px sans-serif";
+    ctx.font = "bold 10px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -334,7 +334,13 @@ function renderCrystalCanvas() {
         }
     }
 
+    state.generatedCanvas = canvas;
     previewContainer.appendChild(canvas);
+
+    // إظهار زر التحميل بعد اكتمال الرسم
+    if (downloadButton) {
+        downloadButton.style.display = "block";
+    }
 }
 
 // ==================================================
@@ -403,6 +409,21 @@ function escapeHtml(value) {
 }
 
 // ==================================================
+// DOWNLOAD BUTTON EVENT
+// ==================================================
+
+if (downloadButton) {
+    downloadButton.addEventListener("click", function() {
+        if (!state.generatedCanvas) return;
+
+        const link = document.createElement("a");
+        link.download = "crystal-canvas-pattern.png";
+        link.href = state.generatedCanvas.toDataURL("image/png");
+        link.click();
+    });
+}
+
+// ==================================================
 // GENERATE BUTTON
 // ==================================================
 
@@ -422,13 +443,8 @@ async function handleGenerate() {
 
         calculateGrid();
 
-        // 1. تحويل الصورة بسرعة وبدون تجميد
         await analyzeImageAsync();
-
-        // 2. رسم اللوحة والرموز
         renderCrystalCanvas();
-
-        // 3. طباعة الجدول
         renderColorKey();
 
     } catch (error) {
