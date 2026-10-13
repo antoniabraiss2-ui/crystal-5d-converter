@@ -3,7 +3,7 @@
 /*
 ====================================================
 CRYSTAL 5D CONVERTER
-Optimized Async Conversion + Symbols + Dual Download Buttons
+Optimized Async Conversion + Symbols + Dual Download & PDF Print
 ====================================================
 */
 
@@ -18,7 +18,7 @@ const heightInput = document.getElementById("heightInput");
 const drillSize = document.getElementById("drillSize");
 const generateButton = document.getElementById("generateButton");
 const downloadButton = document.getElementById("downloadButton");
-const downloadKeyButton = document.getElementById("downloadKeyButton");
+const downloadPdfButton = document.getElementById("downloadPdfButton");
 const previewContainer = document.getElementById("previewContainer");
 const columnsCount = document.getElementById("columnsCount");
 const rowsCount = document.getElementById("rowsCount");
@@ -55,8 +55,7 @@ const state = {
     totalCells: 0,
     grid: [],
     colorsUsed: new Map(),
-    generatedCanvas: null,
-    generatedKeyCanvas: null
+    generatedCanvas: null
 };
 
 const MM_PER_CM = 10;
@@ -121,7 +120,7 @@ function showImagePreview() {
 
     previewContainer.innerHTML = "";
     if (downloadButton) downloadButton.style.display = "none";
-    if (downloadKeyButton) downloadKeyButton.style.display = "none";
+    if (downloadPdfButton) downloadPdfButton.style.display = "none";
 
     const image = document.createElement("img");
     image.src = state.imageURL;
@@ -400,80 +399,8 @@ function renderColorKey() {
     colorKey.innerHTML = "";
     colorKey.appendChild(table);
 
-    renderColorKeyTableImage();
-}
-
-function renderColorKeyTableImage() {
-    if (!state.colorsUsed || state.colorsUsed.size === 0) return;
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    const colors = Array.from(state.colorsUsed.values());
-    colors.sort((a, b) => b.quantity - a.quantity);
-
-    const rowHeight = 35;
-    const headerHeight = 45;
-    const padding = 20;
-    
-    canvas.width = 600;
-    canvas.height = headerHeight + (colors.length * rowHeight) + (padding * 2);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "#333333";
-    ctx.font = "bold 18px sans-serif";
-    ctx.fillText("Crystal 5D - Color Key & Shopping List", padding, 35);
-
-    let currentY = 65;
-    ctx.fillStyle = "#f8f9fa";
-    ctx.fillRect(padding, currentY, canvas.width - (padding * 2), 30);
-
-    ctx.fillStyle = "#111111";
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillText("Symbol", padding + 15, currentY + 20);
-    ctx.fillText("DMC Code", padding + 100, currentY + 20);
-    ctx.fillText("Color Name", padding + 220, currentY + 20);
-    ctx.fillText("Quantity", padding + 450, currentY + 20);
-
-    currentY += 30;
-
-    ctx.font = "12px sans-serif";
-    for (let i = 0; i < colors.length; i++) {
-        const color = colors[i];
-        const rowY = currentY + (i * rowHeight);
-
-        ctx.strokeStyle = "#e0e0e0";
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(padding, rowY + rowHeight);
-        ctx.lineTo(canvas.width - padding, rowY + rowHeight);
-        ctx.stroke();
-
-        ctx.fillStyle = color.hex;
-        ctx.fillRect(padding + 10, rowY + 6, 22, 22);
-        ctx.strokeStyle = "#ccc";
-        ctx.strokeRect(padding + 10, rowY + 6, 22, 22);
-
-        ctx.fillStyle = getTextColorForBackground(color.hex);
-        ctx.font = "bold 12px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(color.symbol, padding + 21, rowY + 21);
-        ctx.textAlign = "left";
-
-        ctx.fillStyle = "#333333";
-        ctx.font = "bold 12px sans-serif";
-        ctx.fillText(color.code, padding + 100, rowY + 22);
-        
-        ctx.font = "12px sans-serif";
-        ctx.fillText(color.name, padding + 220, rowY + 22);
-        ctx.fillText(formatNumber(color.quantity), padding + 450, rowY + 22);
-    }
-
-    state.generatedKeyCanvas = canvas;
-    if (downloadKeyButton) {
-        downloadKeyButton.style.display = "block";
+    if (downloadPdfButton) {
+        downloadPdfButton.style.display = "block";
     }
 }
 
@@ -501,14 +428,9 @@ if (downloadButton) {
     });
 }
 
-if (downloadKeyButton) {
-    downloadKeyButton.addEventListener("click", function() {
-        if (!state.generatedKeyCanvas) return;
-
-        const link = document.createElement("a");
-        link.download = "crystal-color-key-list.png";
-        link.href = state.generatedKeyCanvas.toDataURL("image/png");
-        link.click();
+if (downloadPdfButton) {
+    downloadPdfButton.addEventListener("click", function() {
+        window.print();
     });
 }
 
