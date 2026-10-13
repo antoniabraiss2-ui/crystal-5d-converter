@@ -1,359 +1,187 @@
+/* ====================================================
+   CRYSTAL 5D CONVERTER - MAIN STYLESHEET
+   ==================================================== */
+
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-:root {
-    --bg: #f6f4f1;
-    --card: #ffffff;
-    --text: #222222;
-    --muted: #777777;
-    --border: #dddddd;
-    --accent: #222222;
-    --radius: 16px;
-}
-
 body {
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f4f6f9;
+    color: #333333;
+    line-height: 1.6;
+    padding: 20px;
 }
 
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
 
-/* =========================
-   HEADER
-========================= */
-
-.app-header {
+header {
     text-align: center;
-    padding: 40px 20px 25px;
+    margin-bottom: 25px;
 }
 
-.app-header h1 {
-    font-size: 34px;
-    font-weight: 800;
-    letter-spacing: -1px;
+header h1 {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-bottom: 8px;
 }
 
-.app-header p {
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: 15px;
-}
-
-
-/* =========================
-   MAIN APP
-========================= */
-
-.app {
-    width: min(1100px, calc(100% - 30px));
-    margin: 0 auto 60px;
-}
-
-
-/* =========================
-   SECTIONS / CARDS
-========================= */
-
-.upload-section,
-.settings,
-.preview-section,
-.stats,
-.color-key-section {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    margin-bottom: 20px;
-}
-
-
-/* =========================
-   UPLOAD
-========================= */
-
-.upload-section {
-    text-align: center;
-}
-
-.upload-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    background: var(--accent);
-    color: white;
-
-    padding: 14px 24px;
-
-    border-radius: 10px;
-
-    font-size: 15px;
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-        transform 0.15s ease,
-        opacity 0.15s ease;
-}
-
-.upload-button:hover {
-    opacity: 0.9;
-}
-
-.upload-button:active {
-    transform: scale(0.98);
-}
-
-#fileName {
-    margin-top: 12px;
-    color: var(--muted);
+header p {
     font-size: 14px;
+    color: #6c757d;
 }
 
-
-/* =========================
-   SETTINGS
-========================= */
-
-.settings h2,
-.preview-section h2,
-.color-key-section h2 {
-    font-size: 20px;
+section {
+    background: #fafbfc;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 20px;
     margin-bottom: 20px;
 }
 
-.size-row {
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 15px;
-
+section h2 {
+    font-size: 18px;
+    color: #2c3e50;
     margin-bottom: 15px;
+    border-bottom: 2px solid #eaecef;
+    padding-bottom: 8px;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.file-name {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #475569;
 }
 
 .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.input-group.full {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .input-group label {
-    font-size: 13px;
-    font-weight: 700;
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #4b5563;
 }
 
 .input-group input,
 .input-group select {
     width: 100%;
-
-    height: 46px;
-
-    padding: 0 12px;
-
-    border: 1px solid var(--border);
-    border-radius: 10px;
-
-    background: white;
-
-    font-size: 15px;
-
-    outline: none;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background-color: #fff;
 }
 
-.input-group input:focus,
-.input-group select:focus {
-    border-color: #777777;
+.stats-box {
+    display: flex;
+    justify-content: space-between;
+    background: #f1f5f9;
+    padding: 12px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 15px;
 }
 
-
-#generateButton {
+.primary-btn {
     width: 100%;
-
-    height: 50px;
-
-    border: none;
-    border-radius: 10px;
-
-    background: var(--accent);
+    background-color: #2563eb;
     color: white;
-
-    font-size: 15px;
-    font-weight: 700;
-
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-
-    transition:
-        opacity 0.15s ease,
-        transform 0.15s ease;
+    transition: background-color 0.2s;
 }
 
-#generateButton:hover {
-    opacity: 0.9;
+.primary-btn:hover {
+    background-color: #1d4ed8;
 }
 
-#generateButton:active {
-    transform: scale(0.99);
+.primary-btn:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
 }
-
-
-/* =========================
-   PREVIEW
-========================= */
 
 #previewContainer {
-    min-height: 300px;
-
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    min-height: 150px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    overflow: auto;
-
-    border: 1px dashed var(--border);
-    border-radius: 12px;
-
-    background: #fafafa;
-
-    padding: 20px;
-
-    color: var(--muted);
-}
-
-#previewContainer img {
-    display: block;
-
-    max-width: 100%;
-    max-height: 700px;
-
-    object-fit: contain;
-
-    border-radius: 6px;
-}
-
-
-/* =========================
-   STATS
-========================= */
-
-.stats {
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
-    gap: 15px;
-}
-
-.stats div {
-    text-align: center;
-
-    padding: 15px;
-
-    border: 1px solid var(--border);
-    border-radius: 12px;
-}
-
-.stats span {
-    display: block;
-
-    color: var(--muted);
-
-    font-size: 12px;
-
-    margin-bottom: 7px;
-}
-
-.stats strong {
-    display: block;
-
-    font-size: 22px;
-}
-
-
-/* =========================
-   COLOR KEY
-========================= */
-
-#colorKey {
     overflow-x: auto;
 }
 
+#previewContainer p {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* جدول الألوان */
 .color-table {
     width: 100%;
-
     border-collapse: collapse;
-
-    font-size: 14px;
+    margin-top: 10px;
+    background: #ffffff;
+    font-size: 13px;
 }
 
 .color-table th,
 .color-table td {
-    padding: 12px 10px;
-
+    padding: 10px;
     text-align: left;
-
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .color-table th {
-    font-size: 12px;
-
-    color: var(--muted);
-
-    text-transform: uppercase;
+    background-color: #f3f4f6;
+    color: #374151;
+    font-weight: 600;
 }
 
-
-/* =========================
-   RESPONSIVE
-========================= */
-
-@media (max-width: 600px) {
-
-    .app-header {
-        padding-top: 28px;
+/* ====================================================
+   PRINT STYLES FOR PDF EXPORT
+   ==================================================== */
+@media print {
+    body * {
+        visibility: hidden;
     }
-
-    .app-header h1 {
-        font-size: 28px;
+    #colorKey, #colorKey * {
+        visibility: visible;
     }
-
-    .app {
-        width: min(100% - 20px, 1100px);
+    #colorKey {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
     }
-
-    .upload-section,
-    .settings,
-    .preview-section,
-    .stats,
-    .color-key-section {
-        padding: 18px;
-    }
-
-    .size-row {
-        grid-template-columns: 1fr;
-    }
-
-    .stats {
-        grid-template-columns: 1fr;
-    }
-
 }
