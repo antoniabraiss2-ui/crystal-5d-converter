@@ -3,7 +3,7 @@
 /*
 ====================================================
 CRYSTAL 5D CONVERTER
-Optimized Async Conversion + Symbols + Dual Download & PDF Print
+Optimized Async Conversion + Symbols + Auto-Injected PDF Button
 ====================================================
 */
 
@@ -18,7 +18,6 @@ const heightInput = document.getElementById("heightInput");
 const drillSize = document.getElementById("drillSize");
 const generateButton = document.getElementById("generateButton");
 const downloadButton = document.getElementById("downloadButton");
-const downloadPdfButton = document.getElementById("downloadPdfButton");
 const previewContainer = document.getElementById("previewContainer");
 const columnsCount = document.getElementById("columnsCount");
 const rowsCount = document.getElementById("rowsCount");
@@ -120,7 +119,10 @@ function showImagePreview() {
 
     previewContainer.innerHTML = "";
     if (downloadButton) downloadButton.style.display = "none";
-    if (downloadPdfButton) downloadPdfButton.style.display = "none";
+
+    // إزالة زر الـ PDF القديم إن وجد عند رفع صورة جديدة
+    const existingPdfBtn = document.getElementById("autoDownloadPdfButton");
+    if (existingPdfBtn) existingPdfBtn.remove();
 
     const image = document.createElement("img");
     image.src = state.imageURL;
@@ -210,7 +212,7 @@ function findClosestCrystal(r, g, b) {
         const color = CRYSTAL_PALETTE[i];
         const rgb = hexToRgb(color.hex);
         const red = r - rgb.r;
-        const green = g - rgb.g;
+        const green = b - rgb.g;
         const blue = b - rgb.b;
         const distance = 0.299 * red * red + 0.587 * green * green + 0.114 * blue * blue;
 
@@ -345,7 +347,7 @@ function renderCrystalCanvas() {
 }
 
 // ==================================================
-// RENDER COLOR KEY TABLE
+// RENDER COLOR KEY TABLE & AUTO-INJECT PDF BUTTON
 // ==================================================
 
 function renderColorKey() {
@@ -358,6 +360,22 @@ function renderColorKey() {
 
     const colors = Array.from(state.colorsUsed.values());
     colors.sort((a, b) => b.quantity - a.quantity);
+
+    // إزالة الزر القديم إن وجد لتجنب التكرار
+    const existingBtn = document.getElementById("autoDownloadPdfButton");
+    if (existingBtn) existingBtn.remove();
+
+    // إنشاء زر الـ PDF برمجياً وإضافته فوق جدول الألوان مباشرة
+    const pdfButton = document.createElement("button");
+    pdfButton.id = "autoDownloadPdfButton";
+    pdfButton.textContent = "Save Color Key as PDF";
+    pdfButton.style.cssText = "width: 100%; margin-bottom: 15px; background-color: #dc3545; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;";
+    
+    pdfButton.addEventListener("click", function() {
+        window.print();
+    });
+
+    colorKey.parentNode.insertBefore(pdfButton, colorKey);
 
     const table = document.createElement("table");
     table.className = "color-table";
@@ -398,10 +416,6 @@ function renderColorKey() {
     table.appendChild(tbody);
     colorKey.innerHTML = "";
     colorKey.appendChild(table);
-
-    if (downloadPdfButton) {
-        downloadPdfButton.style.display = "block";
-    }
 }
 
 function escapeHtml(value) {
@@ -414,7 +428,7 @@ function escapeHtml(value) {
 }
 
 // ==================================================
-// DOWNLOAD BUTTON EVENTS
+// DOWNLOAD PATTERN BUTTON EVENT
 // ==================================================
 
 if (downloadButton) {
@@ -425,12 +439,6 @@ if (downloadButton) {
         link.download = "crystal-canvas-pattern.png";
         link.href = state.generatedCanvas.toDataURL("image/png");
         link.click();
-    });
-}
-
-if (downloadPdfButton) {
-    downloadPdfButton.addEventListener("click", function() {
-        window.print();
     });
 }
 
